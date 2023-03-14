@@ -6,8 +6,7 @@
 #include "../include/mm10dbModule.hpp"
 #include "../include/sgrnascorer2Module.hpp"
 #include "../include/bowtie2Module.hpp"
-#include "../include/ISSLScoringModule.hpp"
-//#include "../include/ISSLScoringModuleMMF.hpp"
+#include "../include/ISSLScoringModuleMMF.hpp"
 #include "../include/outputModule.hpp"
 #include <chrono>
 
@@ -35,8 +34,7 @@ int main(int argc, char** argv)
 	mm10dbModule			mm10db(config);
 	sgrnascorer2Module		sgrnascorer2(config);
 	bowtie2Module			bowtie2(config);
-	ISSLScoringModule		ISSLScoring(config);
-	//ISSLScoringModuleMMF	ISSLScoringMMF(config);
+	ISSLScoringModuleMMF	ISSLScoringMMF(config);
 	outputModule			output(config);
 
 	// Record start time
@@ -53,26 +51,25 @@ int main(int argc, char** argv)
 
 		std::cout << "Processing batch " << ++batchNum << std::endl;
 
-		// Consensus scoring
-		chopchop.run(*currentBatch);
-		mm10db.run(*currentBatch);
-		sgrnascorer2.run(*currentBatch);
+		//// Consensus scoring
+		//chopchop.run(*currentBatch);
+		//mm10db.run(*currentBatch);
+		//sgrnascorer2.run(*currentBatch);
 
-		// Complete consensus evaluation
-		std::cout << "Evaluating efficiency via consensus approach." << std::endl;
-		uint64_t failedCount = 0;
-		uint64_t testedCount = 0;
-		for (guideResults& candidate : *currentBatch)
-		{
-			if (candidate.consensusCount < config.consensus.n) { failedCount++; }
-			testedCount++;
-		}
-		std::cout << fmt::format("\t{:L} of {:L} failed here.", failedCount, testedCount) << std::endl;
+		//// Complete consensus evaluation
+		//std::cout << "Evaluating efficiency via consensus approach." << std::endl;
+		//uint64_t failedCount = 0;
+		//uint64_t testedCount = 0;
+		//for (guideResults& candidate : *currentBatch)
+		//{
+		//	if (candidate.consensusCount < config.consensus.n) { failedCount++; }
+		//	testedCount++;
+		//}
+		//std::cout << fmt::format("\t{:L} of {:L} failed here.", failedCount, testedCount) << std::endl;
 
 		// Specificity scoring
-		bowtie2.run(*currentBatch);
-		ISSLScoring.run(*currentBatch);
-		//ISSLScoringMMF.run(*currentBatch);
+		//bowtie2.run(*currentBatch);
+		ISSLScoringMMF.run(*currentBatch);
 
 		// Print results to file
 		output.run(*currentBatch);
