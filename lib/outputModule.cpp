@@ -13,7 +13,7 @@ void outputModule::run() {};
 void outputModule::run(std::vector<guideResults>& candidateGuides)
 {
 	ofstream outFile;
-	outFile.open(outputFile);
+	outFile.open(outputFile, std::ios::out | std::ios::binary | std::ios::app);
 	if (firstWrite)
 		outFile << "seq, header, start, strand, end, isUnique, passedG20, passedAvoidLeadingT, passedATPercent, passedTTTT, passedSecondaryStructure, acceptedByMm10db, acceptedBySgRnaScorer2, consensusCount, passedBowtie2, passedOffTargetScore, AT, ssL1, ssStructure, ssEnergy, sgrnascorer2score, bowtie2Chr, bowtie2Start, bowtie2End, mitOfftargetscore, cfdOfftargetscore\n";
 		firstWrite = false;
