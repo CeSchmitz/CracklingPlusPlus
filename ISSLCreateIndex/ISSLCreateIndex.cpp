@@ -432,30 +432,39 @@ int main(int argc, char** argv)
         std::cout << fmt::format("\tBuilding slice list {}", i+1) << std::endl;
         size_t sliceListSize = 1ULL << (sliceMasks[i].size() * 2);
         vector<vector<uint64_t>> sliceList(sliceListSize);
+        vector<std::mutex> mtxList(sliceListSize);
         uint32_t signatureId = 0;
-        for (uint64_t signature : seqSignatures) {
+
+        #pragma omp parallel for
+        for (int64_t s = 0; s < seqSignatures.size(); s++) {
             uint32_t occurrences = seqSignaturesOccurrences[signatureId];
             uint32_t sliceVal = 0ULL;
             for (size_t j = 0; j < sliceMasks[i].size(); j++)
             {
-                sliceVal |= ((signature >> (sliceMasks[i][j] * 2)) & 3ULL) << (j * 2);
+                sliceVal |= ((seqSignatures[s] >> (sliceMasks[i][j] * 2)) & 3ULL) << (j * 2);
             }
             // seqSigIdVal represnets the sequence signature ID and number of occurrences of the associated sequence.
             // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
             // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
-            uint64_t seqSigIdVal = (static_cast<uint64_t>(occurrences) << 32) | static_cast<uint64_t>(signatureId);
+            uint64_t seqSigIdVal = (static_cast<uint64_t>(occurrences) << 32) | static_cast<uint64_t>(s);
+            mtxList[sliceVal].lock();
             sliceList[sliceVal].push_back(seqSigIdVal);
-            signatureId++;
+            mtxList[sliceVal].unlock();
         }
+
         std::cout << "\tFinished!" << std::endl;
 
-        std::cout << fmt::format("\tWriting slice list {} to file...", i+1) << std::endl;
+        std::cout << fmt::format("\tWriting slice list {} to file...", i + 1) << std::endl;
+
+        vector<size_t> sliceListLengths(sliceListSize);
+        #pragma omp parallel for
+        for (int64_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
+            sliceListLengths[j] = sliceList[j].size();
+        }
+
         isslIndex.open(argv[4], std::ios::out | std::ios::binary | std::ios::app);
         // Write slice list lengths
-        for (size_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
-            size_t sz = sliceList[j].size();
-            isslIndex.write(reinterpret_cast<char*>(&sz), sizeof(size_t));
-        }
+        isslIndex.write(reinterpret_cast<char*>(sliceListLengths.data()), sizeof(size_t) * sliceListSize);
         // write slice list data
         for (size_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
             isslIndex.write(reinterpret_cast<char*>(sliceList[j].data()), sizeof(uint64_t) * sliceList[j].size());
