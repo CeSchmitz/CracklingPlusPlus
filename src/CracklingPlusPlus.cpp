@@ -12,6 +12,8 @@
 
 int main(int argc, char** argv)
 {
+	std::cout << "Memory mapped file" << std::endl;
+
 	// Check input arguments
 	if (argc != 2) {
 		std::cout << fmt::format("Usage: {} [Crackling Config File]\n", argv[0]);
