@@ -6,7 +6,6 @@ using std::string;
 using std::vector;
 using std::pair;
 using std::unordered_map;
-using namespace boost::interprocess;
 
 const vector<uint8_t> nucleotideIndex{ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,3 };
 const vector<char> signatureIndex{ 'A', 'C', 'G', 'T' };
@@ -70,26 +69,31 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
      *  - Size of slice N lists (N being the number of slices)
      *  - Contents of slice N lists
      */
-    file_mapping isslFp(ISSLIndex.string().c_str(), read_only);
-    mapped_region region(isslFp, read_only);
-    void* inFileFp = region.get_address();
+    boost::iostreams::mapped_file_source isslFp;
+    isslFp.open(ISSLIndex.string());
+
+    if (!isslFp.is_open())
+    {
+        throw std::runtime_error("Error reading index: could not open file\n");
+    }
+    const void* inFileFp = static_cast<const void*>(isslFp.data());
 
     /** The index contains a fixed-sized header
      *      - the number of unique off-targets in the index
      *      - the length of an off-target
      *      - the number of slices
      */
-    size_t* headerPtr = static_cast<size_t*>(inFileFp);
+    const size_t* headerPtr = static_cast<const size_t*>(inFileFp);
     size_t offtargetsCount = *headerPtr++;
     size_t seqLength = *headerPtr++;
     size_t sliceCount = *headerPtr++;
 
     /** Load in all of the off-target sites */
-    uint64_t* offtargetsPtr = reinterpret_cast<uint64_t*>(headerPtr);
+    const uint64_t* offtargetsPtr = static_cast<const uint64_t*>(headerPtr);
 
 
     /** Read the slice masks and generate 2 bit masks */
-    uint64_t* sliceMasksPtr = static_cast<uint64_t*>(offtargetsPtr + offtargetsCount);
+    const uint64_t* sliceMasksPtr = static_cast<const uint64_t*>(offtargetsPtr + offtargetsCount);
     vector<vector<uint64_t>> sliceMasks;
     for (size_t i = 0; i < sliceCount; i++)
     {
@@ -110,16 +114,16 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
     *   - Size of each list within the slice stored contiguously
     *   - The contents of all the lists stored contiguously
     */
-    vector<size_t*> allSlicelistSizes(sliceCount);
-    vector<uint64_t*> allSliceSignatures(sliceCount);
-    size_t* listSizePtr = static_cast<size_t*>(sliceMasksPtr);
-    uint64_t* signaturePtr = static_cast<uint64_t*>(sliceMasksPtr);
+    vector<const size_t*> allSlicelistSizes(sliceCount);
+    vector<const uint64_t*> allSliceSignatures(sliceCount);
+    const size_t* listSizePtr = static_cast<const size_t*>(sliceMasksPtr);
+    const uint64_t* signaturePtr = static_cast<const uint64_t*>(sliceMasksPtr);
     for (size_t i = 0; i < sliceCount; i++)
     {
         allSlicelistSizes[i] = listSizePtr;
-        signaturePtr = static_cast<uint64_t*>(listSizePtr + (1ULL << (sliceMasks[i].size() * 2)));
+        signaturePtr = static_cast<const uint64_t*>(listSizePtr + (1ULL << (sliceMasks[i].size() * 2)));
         allSliceSignatures[i] = signaturePtr;
-        listSizePtr = static_cast<size_t*>(signaturePtr + offtargetsCount);
+        listSizePtr = static_cast<const size_t*>(signaturePtr + offtargetsCount);
     }
 
     cout << "ISSL Index Mapped." << endl;
@@ -151,15 +155,15 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
      *         | ...
      */
 
-    vector<vector<uint64_t*>> sliceLists(sliceCount);
+    vector<vector<const uint64_t*>> sliceLists(sliceCount);
     // Assign sliceLists size based on each slice length
     for (size_t i = 0; i < sliceCount; i++)
     {
-        sliceLists[i] = vector<uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
+        sliceLists[i] = vector<const uint64_t*>(1ULL << (sliceMasks[i].size() * 2));
     }
 
     for (size_t i = 0; i < sliceCount; i++) {
-        uint64_t* sliceList = allSliceSignatures[i];
+        const uint64_t* sliceList = allSliceSignatures[i];
         size_t sliceLimit = 1ULL << (sliceMasks[i].size() * 2);
         for (size_t j = 0; j < sliceLimit; j++) {
             sliceLists[i][j] = sliceList;
@@ -209,7 +213,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                 }
 
                 size_t signaturesInSlice = allSlicelistSizes[i][searchSlice];
-                uint64_t* sliceOffset = sliceList[searchSlice];
+                const uint64_t* sliceOffset = sliceList[searchSlice];
 
                 /** For each off-target signature in slice */
                 for (size_t j = 0; j < signaturesInSlice; j++) {

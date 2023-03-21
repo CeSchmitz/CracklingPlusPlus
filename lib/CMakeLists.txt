@@ -2,7 +2,13 @@
 #########
 # Boost #
 #########
-find_package(Boost REQUIRED COMPONENTS regex)
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED COMPONENTS regex iostreams)
+
+# Find OpenMP
+find_package(OpenMP REQUIRED)
 
 ##########
 # LIBSVM #
@@ -47,9 +53,9 @@ add_library(configParserModule
     ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp
 )
 target_link_libraries(configParserModule 
-    PRIVATE utils 
-    PRIVATE Boost::boost 
-    PRIVATE Boost::regex
+    utils 
+    Boost::boost 
+    Boost::regex
 )
 
 ################
@@ -61,9 +67,9 @@ add_library(inputModule
     ${CMAKE_SOURCE_DIR}/include/pipelineModule.hpp
 )
 target_link_libraries(inputModule 
-    PRIVATE utils 
-    PRIVATE Boost::boost 
-    PRIVATE Boost::regex
+    utils 
+    Boost::boost 
+    Boost::regex
 )
 
 #####################
@@ -74,9 +80,9 @@ add_library(cas9InputModule
     ${CMAKE_SOURCE_DIR}/include/cas9InputModule.hpp
 )
 target_link_libraries(cas9InputModule 
-    PRIVATE utils 
-    PRIVATE Boost::regex 
-    PRIVATE inputModule
+    utils 
+    Boost::regex 
+    inputModule
 )
 
 ####################
@@ -96,7 +102,7 @@ add_library(chopchopModule
     ${CMAKE_SOURCE_DIR}/include/chopchopModule.hpp
 )
 target_link_libraries(chopchopModule 
-    PRIVATE consensusModule
+    consensusModule
 )
 
 #################
@@ -107,9 +113,9 @@ add_library(mm10dbModule
     ${CMAKE_SOURCE_DIR}/include/mm10dbModule.hpp
 )
 target_link_libraries(mm10dbModule 
-    PRIVATE consensusModule 
-    PRIVATE Boost::boost 
-    PRIVATE Boost::regex
+    consensusModule 
+    Boost::boost 
+    Boost::regex
 )
 
 #######################
@@ -120,8 +126,8 @@ add_library(sgrnascorer2Module
     ${CMAKE_SOURCE_DIR}/include/sgrnascorer2Module.hpp
 )
 target_link_libraries(sgrnascorer2Module 
-    PRIVATE consensusModule 
-    PRIVATE libsvm
+    consensusModule 
+    libsvm
 )
 
 ######################
@@ -141,8 +147,8 @@ add_library(bowtie2Module
     ${CMAKE_SOURCE_DIR}/include/bowtie2Module.hpp
 )
 target_link_libraries(bowtie2Module 
-    PRIVATE specificityModule 
-    PRIVATE Boost::boost
+    specificityModule 
+    Boost::boost
 )
 
 ##################################
@@ -153,17 +159,13 @@ add_library(ISSLScoringModule
     STATIC ${CMAKE_SOURCE_DIR}/lib/ISSLScoringModule.cpp 
     ${CMAKE_SOURCE_DIR}/include/ISSLScoringModule.hpp
 )
-# Find OpenMP
-find_package(OpenMP REQUIRED)
 # Link OpenMP if available
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(ISSLScoringModule 
-        PRIVATE specificityModule 
-        PRIVATE otScorePenalties 
-        PRIVATE OpenMP::OpenMP_CXX 
-        PRIVATE Boost::boost
-    )
-endif()
+target_link_libraries(ISSLScoringModule 
+    specificityModule 
+    otScorePenalties 
+    OpenMP::OpenMP_CXX 
+    Boost::boost
+)
 
 #####################################################
 # ISSL Off-target Scoring Module Memory Mapped File #
@@ -174,14 +176,15 @@ add_library(ISSLScoringModuleMMF
     ${CMAKE_SOURCE_DIR}/include/ISSLScoringModuleMMF.hpp
 )
 # Link OpenMP if available
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(ISSLScoringModuleMMF 
-        PRIVATE specificityModule 
-        PRIVATE otScorePenalties 
-        PRIVATE OpenMP::OpenMP_CXX 
-        PRIVATE Boost::boost
-    )
-endif()
+target_link_libraries(ISSLScoringModuleMMF 
+    specificityModule 
+    otScorePenalties 
+    OpenMP::OpenMP_CXX 
+    Boost::boost
+    Boost::iostreams
+    Boost::dynamic_linking
+    Boost::diagnostic_definitions
+)
 
 #################
 # Output Module #

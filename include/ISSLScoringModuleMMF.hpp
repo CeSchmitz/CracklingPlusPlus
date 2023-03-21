@@ -6,8 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include <omp.h>
-#include <boost/interprocess/file_mapping.hpp>
-#include <boost/interprocess/mapped_region.hpp>
+#include <boost/iostreams/device/mapped_file.hpp>
 #include "../include/phmap/phmap.h"
 #include "../include/libpopcnt/libpopcnt.h"
 #include "../include/otScorePenalties.hpp"
