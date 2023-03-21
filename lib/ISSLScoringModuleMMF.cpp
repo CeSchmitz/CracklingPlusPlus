@@ -58,7 +58,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         return;
     }
 
-    cout << "Loading ISSL Index." << endl;
+    cout << "Loading ISSL Index from file." << endl;
 
     /** Begin reading the binary encoded ISSL, structured as:
      *  - The header (3 items)
@@ -122,7 +122,7 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
         listSizePtr = static_cast<size_t*>(signaturePtr + offtargetsCount);
     }
 
-    cout << "ISSL Index Loaded." << endl;
+    cout << "ISSL Index Loaded from file." << endl;
 
     /** Prevent assessing an off-target site for multiple slices
      *

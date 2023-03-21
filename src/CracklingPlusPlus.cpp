@@ -12,6 +12,7 @@
 
 int main(int argc, char** argv)
 {
+	std::cout << "In memory version" << std::endl;
 	// Check input arguments
 	if (argc != 2) {
 		std::cout << fmt::format("Usage: {} [Crackling Config File]\n", argv[0]);
