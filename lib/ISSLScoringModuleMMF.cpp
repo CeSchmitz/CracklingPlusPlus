@@ -334,37 +334,37 @@ void ISSLScoringModuleMMF::run(std::vector<guideResults>& candidateGuides)
                                 totScoreCfd += cfdScore * (double)occurrences;
                             }
 
-                            /** Stop calculating global score early if possible */
-                            if (this->config.method == otScoreMethod::mitAndCfd) {
-                                if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
-                            if (this->config.method == otScoreMethod::mitOrCfd) {
-                                if (totScoreMit > maximum_sum || totScoreCfd > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
-                            if (this->config.method == otScoreMethod::avgMitCfd) {
-                                if (((totScoreMit + totScoreCfd) / 2.0) > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
-                            if (this->config.method == otScoreMethod::mit) {
-                                if (totScoreMit > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
-                            if (this->config.method == otScoreMethod::cfd) {
-                                if (totScoreCfd > maximum_sum) {
-                                    checkNextSlice = false;
-                                    break;
-                                }
-                            }
+                            // /** Stop calculating global score early if possible */
+                            // if (this->config.method == otScoreMethod::mitAndCfd) {
+                            //     if (totScoreMit > maximum_sum && totScoreCfd > maximum_sum) {
+                            //         checkNextSlice = false;
+                            //         break;
+                            //     }
+                            // }
+                            // if (this->config.method == otScoreMethod::mitOrCfd) {
+                            //     if (totScoreMit > maximum_sum || totScoreCfd > maximum_sum) {
+                            //         checkNextSlice = false;
+                            //         break;
+                            //     }
+                            // }
+                            // if (this->config.method == otScoreMethod::avgMitCfd) {
+                            //     if (((totScoreMit + totScoreCfd) / 2.0) > maximum_sum) {
+                            //         checkNextSlice = false;
+                            //         break;
+                            //     }
+                            // }
+                            // if (this->config.method == otScoreMethod::mit) {
+                            //     if (totScoreMit > maximum_sum) {
+                            //         checkNextSlice = false;
+                            //         break;
+                            //     }
+                            // }
+                            // if (this->config.method == otScoreMethod::cfd) {
+                            //     if (totScoreCfd > maximum_sum) {
+                            //         checkNextSlice = false;
+                            //         break;
+                            //     }
+                            // }
                         }
                     }
                 }
