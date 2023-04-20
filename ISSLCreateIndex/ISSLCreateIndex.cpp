@@ -363,6 +363,8 @@ int main(int argc, char** argv)
     scInFile.close();
     size_t sliceCount = sliceMasks.size();
 
+    // Record start time
+    auto startTime = std::chrono::steady_clock::now();
 
     // Begin counting off targets
     uint64_t seqCount = otFileSize / seqLineLength;
@@ -432,6 +434,10 @@ int main(int argc, char** argv)
         std::cout << fmt::format("\tBuilding slice list {}", i+1) << std::endl;
         size_t sliceListSize = 1ULL << (sliceMasks[i].size() * 2);
         vector<vector<uint64_t>> sliceList(sliceListSize);
+        for (vector<uint64_t> isslList : sliceList)
+        {
+            isslList.reserve(1ULL << ((20 - sliceMasks[i].size()) * 2));
+        }
         vector<std::mutex> mtxList(sliceListSize);
         uint32_t signatureId = 0;
 
@@ -447,9 +453,8 @@ int main(int argc, char** argv)
             // (((uint64_t)occurrences) << 32), the most significant 32 bits is the count of the occurrences.
             // (uint64_t)signatureId, the index of the sequence in `seqSignatures`
             uint64_t seqSigIdVal = (static_cast<uint64_t>(occurrences) << 32) | static_cast<uint64_t>(s);
-            mtxList[sliceVal].lock();
+            const std::lock_guard<std::mutex> lock(mtxList[sliceVal]);
             sliceList[sliceVal].push_back(seqSigIdVal);
-            mtxList[sliceVal].unlock();
         }
 
         std::cout << "\tFinished!" << std::endl;
@@ -457,14 +462,22 @@ int main(int argc, char** argv)
         std::cout << fmt::format("\tWriting slice list {} to file...", i + 1) << std::endl;
 
         vector<size_t> sliceListLengths(sliceListSize);
-        #pragma omp parallel for
-        for (int64_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
-            sliceListLengths[j] = sliceList[j].size();
-        }
+        //#pragma omp parallel for
+        //for (int64_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
+        //    sliceListLengths[j] = sliceList[j].size();
+        //}
+
+
 
         isslIndex.open(argv[4], std::ios::out | std::ios::binary | std::ios::app);
         // Write slice list lengths
-        isslIndex.write(reinterpret_cast<char*>(sliceListLengths.data()), sizeof(size_t) * sliceListSize);
+        //isslIndex.write(reinterpret_cast<char*>(sliceListLengths.data()), sizeof(size_t) * sliceListSize);
+
+
+        for (size_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
+            size_t sz = sliceList[j].size();
+            isslIndex.write(reinterpret_cast<char*>(&sz), sizeof(size_t));
+        }
         // write slice list data
         for (size_t j = 0; j < sliceListSize; j++) { // Slice limit given slice width
             isslIndex.write(reinterpret_cast<char*>(sliceList[j].data()), sizeof(uint64_t) * sliceList[j].size());
@@ -473,6 +486,18 @@ int main(int argc, char** argv)
         std::cout << "\tFinished!" << std::endl;
     }
     std::cout << "Finished!" << std::endl;
+
+    // Report time taken (total)
+    std::chrono::nanoseconds nanoSec = std::chrono::steady_clock::now() - startTime;
+    std::chrono::duration<uint64_t, std::ratio<86400>> days = std::chrono::duration_cast<std::chrono::duration<uint64_t, std::ratio<86400>>>(nanoSec);
+    std::chrono::hours hours = std::chrono::duration_cast<std::chrono::hours>(nanoSec - days);
+    std::chrono::minutes minutes = std::chrono::duration_cast<std::chrono::minutes>(nanoSec - days - hours);
+    std::chrono::seconds sec = std::chrono::duration_cast<std::chrono::seconds>(nanoSec - days - hours - minutes);
+    std::chrono::milliseconds milliSec = std::chrono::duration_cast<std::chrono::milliseconds>(nanoSec - days - hours - minutes - sec);
+    std::chrono::microseconds microSec = std::chrono::duration_cast<std::chrono::microseconds>(nanoSec - days - hours - minutes - sec - milliSec);
+    std::cout << fmt::format("Total run time {:02} {:02}:{:02}:{:02} (dd hh:mm:ss) or {} seconds", days.count(), hours.count(), minutes.count(), sec.count(), std::chrono::duration_cast<std::chrono::seconds>(nanoSec).count()) << std::endl;
+
+
     std::cout << "Done" << std::endl;
     return 0;
 }

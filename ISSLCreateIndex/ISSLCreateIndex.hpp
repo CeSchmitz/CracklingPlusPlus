@@ -19,6 +19,7 @@ g++ -o isslCreateIndex isslCreateIndex.cpp -O3 -std=c++11 -fopenmp -mpopcnt
 #include <filesystem>
 #include <fstream>
 #include <mutex>
+#include <chrono>
 #define FMT_HEADER_ONLY
 #include "../include/fmt/format.h"
 #include "../include/libpopcnt/libpopcnt.h"
